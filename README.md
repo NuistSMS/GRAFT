@@ -1,114 +1,190 @@
-# ReDiAR: Sequential Directional Knowledge Reuse for Multimodal MRI Brain Tumor Segmentation
+# GRAFT: Gaussian Replay and Alignment for Forward-Only, Uncertainty-Gated Transfer in Multimodal MRI Brain Tumor Segmentation
 
-Official code and reproducibility materials for the manuscript **“ReDiAR: Sequential Directional Knowledge Reuse for Multimodal MRI Brain Tumor Segmentation”**.
+Official code and reproducibility materials for the manuscript **“GRAFT: Gaussian Replay and Alignment for Forward-Only, Uncertainty-Gated Transfer in Multimodal MRI Brain Tumor Segmentation”**.
 
-**ReDiAR** stands for **Reusable Directional Information via Alignment and Routing**. It is a multi-view **2.5D brain tumor segmentation** framework that reuses information from already optimized MRI directions to guide the training of subsequent directions. Unlike methods based only on simultaneous multi-view feature fusion or final prediction averaging, ReDiAR follows a **forward-only axial → coronal → sagittal** training process with a shared Transformer backbone and direction-specific adapters.
+**GRAFT** stands for **Gaussian Replay and Alignment for Forward-Only Transfer**. It is a multi-view **2.5D brain tumor segmentation** framework that reuses information from already optimized MRI directions to guide the training of subsequent directions. Unlike methods based only on simultaneous multi-view feature fusion or final prediction averaging, GRAFT follows a **forward-only axial → coronal → sagittal** training process with a shared Transformer backbone and direction-specific adapters.
 
 Repository: <https://github.com/NuistSMS/ReDiAR>
 
 ## Method overview
 
-ReDiAR organizes directional knowledge reuse as a dependent **Retain → Align → Route** process:
+GRAFT organizes directional knowledge reuse as a dependent **Retain → Align → Route** process:
 
 1. **Retain — GMM-DFR priors.** Extract prediction-consistent, boundary-enriched features from previously optimized directions; summarize them into scale-specific, semantic-group-conditioned Gaussian-mixture prior banks; and reconstruct compact prior tokens when training a later direction.
+
 2. **Align — View Translator (VT).** Map active-view representations into a fusion space compatible with projected source-direction prior tokens, allowing cross-attention to retrieve relevant directional knowledge.
+
 3. **Route — Uncertainty-Aware Gate (UAG).** Inject prior-conditioned responses only at uncertain spatial queries while preserving reliable current-view responses elsewhere.
 
 The method employs **LKA-based direction-specific adapters** within a shared backbone. The original LKA operator, Gaussian-mixture modeling, and uncertainty estimation are established components; the manuscript's central contribution is their coordinated use for **sequential directional knowledge reuse**.
 
 ```text
+
 Shared backbone initialization
-          |
-          v
- Axial adaptation ───► Fit axial GMM-DFR prior banks
-          |                          |
-          v                          v
- Coronal adaptation ◄────── Reconstructed axial priors
-     (VT + UAG)
-          |
-          v
- Fit coronal GMM-DFR prior banks
-          |
-          v
- Sagittal adaptation ◄──── Reconstructed axial + coronal priors
-     (VT + UAG)
-          |
-          v
- Three-view volume reconstruction and weighted probability fusion
+
+          |
+
+          v
+
+ Axial adaptation ───► Fit axial GMM-DFR prior banks
+
+          |                          |
+
+          v                          v
+
+ Coronal adaptation ◄────── Reconstructed axial priors
+
+     (VT + UAG)
+
+          |
+
+          v
+
+ Fit coronal GMM-DFR prior banks
+
+          |
+
+          v
+
+ Sagittal adaptation ◄──── Reconstructed axial or coronal priors
+
+     (VT + UAG)
+
+          |
+
+          v
+
+ Three-view volume reconstruction and weighted probability fusion
+
 ```
 
 ### Results reported in the manuscript
 
 | Dataset | Mean DSC (%) | Mean SDC (%) |
+
 |---|---:|---:|
+
 | BraTS2019 | **84.49** | **75.77** |
+
 | BraTS2021 | **90.39** | **86.46** |
 
 In the controlled three-view study, sequential prior reuse improves mean DSC by **1.90 percentage points** and mean SDC by **2.71 percentage points** over the same three-view averaging rule without prior transfer. These are **manuscript-reported results**, not values independently reproduced by this README's example command. The supplied checkpoint package covers only one BraTS2019 split; it cannot by itself reproduce the complete five-fold BraTS2019 or BraTS2021 benchmark tables.
 
 ## Package contents
 
-This README describes the files in the provided `SDPT_PAA_Reproducibility_Package` snapshot. That folder name is a **legacy release-directory name**, not the current paper title. Run commands from that directory (if retained) or from the ReDiAR repository root after uploading these contents. File and command names below deliberately match the supplied implementation.
+This README describes the files in the provided `SDPT_PAA_Reproducibility_Package` snapshot. That folder name is a **legacy release-directory name**, not the current paper title. Run commands from that directory (if retained) or from the GRAFT repository root after uploading these contents. File and command names below deliberately match the supplied implementation.
 
 ```text
+
 SDPT_PAA_Reproducibility_Package/
+
 ├── README.md
+
 ├── requirements.txt
+
 ├── environment.yml
+
 ├── CITATION.cff
+
 ├── THIRD_PARTY_NOTICE.md
+
 ├── MANIFEST.sha256
-├── train_backbone.py                 # shared backbone initialization
-├── trainer_backbone.py              # backbone training and validation
-├── train-first.py                   # first directional stage
-├── train-secoce.py                  # second stage with one source prior bank
-├── trian-third.py                   # sagittal stage with axial/coronal priors
-├── test.py                          # three-view volumetric evaluation
-├── GMM.py                           # fit source-direction GMM banks
+
+├── train_backbone.py                 # shared backbone initialization
+
+├── trainer_backbone.py              # backbone training and validation
+
+├── train-first.py                   # first directional stage
+
+├── train-secoce.py                  # second stage with one source prior bank
+
+├── trian-third.py                   # sagittal stage with axial/coronal priors
+
+├── test.py                          # three-view volumetric evaluation
+
+├── GMM.py                           # fit source-direction GMM banks
+
 ├── utils.py
+
 ├── networks/
-│   ├── MISSFOREMR.py                # backbone model
-│   ├── SDPT.py                      # directional ReDiAR implementation (legacy filename)
-│   ├── segformer.py
-│   └── __init__.py
+
+│   ├── MISSFOREMR.py                # backbone model
+
+│   ├── SDPT.py                      # directional GRAFT implementation (legacy filename)
+
+│   ├── segformer.py
+
+│   └── __init__.py
+
 ├── datasets/
-│   ├── dataset_brats19.py           # serialized-case loader for both datasets
-│   └── __init__.py
+
+│   ├── dataset_brats19.py           # serialized-case loader for both datasets
+
+│   └── __init__.py
+
 ├── configs/
-│   ├── brats2019_reference.yaml
-│   └── brats2021_reference.yaml
+
+│   ├── brats2019_reference.yaml
+
+│   └── brats2021_reference.yaml
+
 ├── lists/
-│   ├── BraTS2019/
-│   │   ├── t4.txt
-│   │   └── v4.txt
-│   └── BraTS2021/
-│       ├── train.txt
-│       ├── val.txt
-│       ├── test.txt
-│       ├── p21.txt
-│       └── ptest.txt
+
+│   ├── BraTS2019/
+
+│   │   ├── t4.txt
+
+│   │   └── v4.txt
+
+│   └── BraTS2021/
+
+│       ├── train.txt
+
+│       ├── val.txt
+
+│       ├── test.txt
+
+│       ├── p21.txt
+
+│       └── ptest.txt
+
 ├── checkpoints/
-│   ├── model_out_aixl_19/axial.pth
-│   ├── model_out_cor19/cor.pth
-│   └── model_out_sagittal19/sag.pth
+
+│   ├── model_out_aixl_19/axial.pth
+
+│   ├── model_out_cor19/cor.pth
+
+│   └── model_out_sagittal19/sag.pth
+
 └── gmm_banks/
-    ├── BraTS2019/
-    │   ├── LKA_GMM_Final_axial.pkl
-    │   ├── LKA_GMM_Final_0.8axial.pkl
-    │   ├── LKA_GMM_Final_0.5coronal.pkl
-    │   └── LKA_GMM_Final_0.8coronal.pkl
-    └── BraTS2021/
-        ├── axial_ratio0.5.pkl
-        ├── axial_ratio0.8.pkl
-        ├── coronal_ratio0.5.pkl
-        └── coronal_ratio0.8.pkl
+
+    ├── BraTS2019/
+
+    │   ├── LKA_GMM_Final_axial.pkl
+
+    │   ├── LKA_GMM_Final_0.8axial.pkl
+
+    │   ├── LKA_GMM_Final_0.5coronal.pkl
+
+    │   └── LKA_GMM_Final_0.8coronal.pkl
+
+    └── BraTS2021/
+
+        ├── axial_ratio0.5.pkl
+
+        ├── axial_ratio0.8.pkl
+
+        ├── coronal_ratio0.5.pkl
+
+        └── coronal_ratio0.8.pkl
+
 ```
 
-**Legacy filenames:** `networks/SDPT.py`, `train-secoce.py`, `trian-third.py`, `model_out_aixl_19`, and the `sdpt` Conda environment name are retained for compatibility with the provided scripts and environment file. **ReDiAR is the manuscript and project name; do not rename these code paths without updating imports and references.**
+**Legacy filenames:** `networks/SDPT.py`, `train-secoce.py`, `trian-third.py`, `model_out_aixl_19`, and the `sdpt` Conda environment name are retained for compatibility with the provided scripts and environment file. **GRAFT is the manuscript and project name; do not rename these code paths without updating imports and references.**
 
 Three BraTS2019 directional checkpoint files, eight fitted GMM banks, and the GMM-fitting entry point are included. Raw MRI data, BraTS2021 checkpoints, a standalone backbone checkpoint, and archived evaluation results are not included in this folder. There is no `scripts/` or `results/` directory in this release.
 
-The backbone is imported from `networks.MISSFOREMR`, and directional training, evaluation, and GMM fitting import the ReDiAR implementation from the legacy path `networks.SDPT`. Both modules retain the class name `MISSFormer`; the paper-name update does **not** change network parameters, import paths, or checkpoint keys. `MISSFOREMR.py` is the exact filename, including its spelling.
+The backbone is imported from `networks.MISSFOREMR`, and directional training, evaluation, and GMM fitting import the GRAFT implementation from the legacy path `networks.SDPT`. Both modules retain the class name `MISSFormer`; the paper-name update does **not** change network parameters, import paths, or checkpoint keys. `MISSFOREMR.py` is the exact filename, including its spelling.
 
 ## Environment
 
@@ -128,7 +204,7 @@ python -m pip install -r requirements.txt
 
 The CUDA 13.0 note in `environment.yml` records the captured development environment; it does not install a GPU driver or guarantee the CUDA variant of the installed PyTorch wheel. Training scripts use CUDA explicitly and require a working CUDA-enabled PyTorch environment. The evaluation script has a CPU fallback, but full-volume evaluation and GMM feature pools can be memory-intensive.
 
-Command examples below use Bash line continuations (`\`). In Windows PowerShell, enter each command on one line or replace the continuations with backticks. Replace `/data/...` and `/path/to/...` with your local paths.
+Command examples below use Bash line continuations (`\\`). In Windows PowerShell, enter each command on one line or replace the continuations with backticks. Replace `/data/...` and `/path/to/...` with your local paths.
 
 ## Data preparation and splits
 
@@ -139,22 +215,31 @@ Data preprocessing follows SuperLightNet. For training, labels are background `0
 The required path for each split entry is:
 
 ```text
+
 <root_path>/<split_entry>/<case_name>_pkl_ui8f32b0.pkl
+
 ```
 
 For example:
 
 ```text
+
 /data/BraTS2019/processed/HGG/BraTS19_CBICA_ALN_1/BraTS19_CBICA_ALN_1_pkl_ui8f32b0.pkl
+
 /data/BraTS2021/processed/BraTS2021_01639/BraTS2021_01639_pkl_ui8f32b0.pkl
+
 ```
 
 Keep the `HGG/` and `LGG/` prefixes in BraTS2019 list entries. The loader pads the third spatial dimension by 20 voxels on each side and center-crops to `192 × 192 × 192` for training and validation before sampling directional slices. Evaluation uses sliding windows of `192 × 192` on the padded volume.
 
 | Dataset | Files present | Number of entries |
+
 |---|---|---|
+
 | BraTS2019 | `t4.txt` / `v4.txt` | 268 / 67 |
+
 | BraTS2021 | `train.txt` / `val.txt` / `test.txt` | 875 / 125 / 251 |
+
 | BraTS2021 small subsets | `p21.txt` / `ptest.txt` | 6 / 6 |
 
 Only the fourth BraTS2019 partition is packaged. The reference YAML describes a five-fold protocol, but the other four partitions are absent. The six-case lists are not substitutes for the quantitative evaluation split.
@@ -176,7 +261,6 @@ python test.py \
   --gmm_path_ax gmm_banks/BraTS2019/LKA_GMM_Final_0.8axial.pkl \
   --gmm_path_cor gmm_banks/BraTS2019/LKA_GMM_Final_0.8coronal.pkl \
   --fusion_weights 1.2,1.1,1.0 --margin_threshold 0.65 \
-  --et_min_size 50 --wt_min_size 100 \
   --batch_size 48 --seed 1234 --gpu_id 0
 ```
 
@@ -186,9 +270,10 @@ The script writes `evaluation_config.yaml` and `Ours_Ensemble_v4_eval_results.tx
 
 The executable evaluation settings are:
 
-- Weighted axial/coronal/sagittal probability fusion at `1.2/1.1/1.0`, followed by a `0.5` region threshold.
-- Tumor-core hole filling and removal of enhancing-tumor components below 50 voxels and whole-tumor components below 100 voxels.
+- Weighted axial/coronal/sagittal probability fusion at `1.2/1.1/1.0`.
+
 - Surface Dice tolerance of one voxel. `--z_spacing` does not alter the current SDC calculation.
+
 - Random sampling of reconstructed GMM features, with the supplied seed applied before model loading and inference.
 
 Before interpreting a run, verify that all listed case files exist: `test.py` currently skips missing case files. For `v4.txt`, the result file should contain 67 case rows. Reducing `--batch_size` may help with GPU memory use, but GMM feature pools also consume memory, and changing batching can change the random sampling sequence.
@@ -200,11 +285,17 @@ For BraTS2021, use `lists/BraTS2021/test.txt` and its two ratio-0.8 banks, toget
 Training follows this order:
 
 ```text
+
 Shared backbone → axial adaptation → fit axial GMM-DFR banks
-                → coronal adaptation with axial priors (VT + UAG)
-                → fit coronal GMM-DFR banks
-                → sagittal adaptation with axial and coronal priors (VT + UAG)
-                → three-view evaluation
+
+                → coronal adaptation with axial priors (VT + UAG)
+
+                → fit coronal GMM-DFR banks
+
+                → sagittal adaptation with axial and coronal priors (VT + UAG)
+
+                → three-view evaluation
+
 ```
 
 The YAML files under `configs/` document reference settings; the training programs do not load them automatically. Supply the relevant command-line arguments explicitly. The examples below use the complete BraTS2021 train/validation lists. Paths under `/path/to/` denote checkpoints that must be supplied or selected from a preceding training run.
@@ -308,15 +399,15 @@ GMM banks are explicitly allowed by `.gitignore`. Preserve their directory names
 
 ## Citation and third-party code
 
-**Manuscript title:** *ReDiAR: Sequential Directional Knowledge Reuse for Multimodal MRI Brain Tumor Segmentation*
+**Manuscript title:** *GRAFT: Gaussian Replay and Alignment for Forward-Only, Uncertainty-Gated Transfer in Multimodal MRI Brain Tumor Segmentation*
 
 **Authors:** Xisheng Yan, Fan Yang, Zichen Zhang, and Yunjie Chen.
 
 A provisional BibTeX entry is provided below for the manuscript. Replace this entry with the final publication record (venue, year, volume, pages, DOI) when available:
 
 ```bibtex
-@misc{yan2026rediar,
-  title  = {ReDiAR: Sequential Directional Knowledge Reuse for Multimodal MRI Brain Tumor Segmentation},
+@misc{yan2026graft,
+  title  = {GRAFT: Gaussian Replay and Alignment for Forward-Only, Uncertainty-Gated Transfer in Multimodal MRI Brain Tumor Segmentation},
   author = {Yan, Xisheng and Yang, Fan and Zhang, Zichen and Chen, Yunjie},
   year   = {2026},
   note   = {Manuscript},
